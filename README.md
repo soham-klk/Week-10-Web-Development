@@ -297,3 +297,5 @@ See [API-DOCUMENTATION.md](./API-DOCUMENTATION.md) for full details.
 1. **MongoDB** — Provide a valid `MONGODB_URI` in `.env`. Without it the server will not start.
 2. **PDF Report & PPTX** — Must be created with screenshots after the server is running.
 3. **JWT token revocation** — Currently stateless. A Redis-based blacklist would be needed for hard logout.
+#   W e e k - 9 - W e b - D e v e l o p m e n t  
+ 
