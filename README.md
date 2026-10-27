@@ -1,301 +1,187 @@
-# DG Interns Hub — Week 8: REST API & Advanced Backend Engineering
+# DG Interns Hub — Week 10 Job & Internship Portal
 
-> **Intern:** Soham Kulkarni | **Role:** Web Development Intern | **Cohort:** DG Interns Hub
+A full-stack job and internship portal upgraded from the Week 9 project for the DG Interns Hub Web Development Internship. It includes role-based workspaces, JWT authentication, server-side job discovery, application management, notifications, analytics, and responsive light/dark themes.
 
----
+## Features
 
-## Project Overview
+- Candidate, recruiter, and admin accounts with persisted JWT sign-in and role-protected routes.
+- Recruiter job CRUD, applicant search, and application status management.
+- Admin user controls, listing moderation, platform metrics, and analytics charts.
+- Job filtering by title, skill, location, work type, category, experience, salary, and company; debounced search, sorting, and server pagination.
+- Application submission with PDF/DOC/DOCX resume upload (maximum 5 MB), validated by the browser and API.
+- Candidate application history, status tracker, saved jobs, profile editing, skill-match recommendations, and notifications.
+- Central Axios client, retryable error states, loaders/skeletons, empty states, and toast feedback.
+- Responsive mobile navigation, dashboard sidebars, persisted dark mode, lazy-loaded routes, and reusable components.
 
-DG Interns Hub is a full-stack Job & Internship Portal built during the DG Interns Hub web development internship program.
+## Technology
 
-- **Week 7** delivered a polished React + Vite frontend with job listings, search/filter, an application modal, and a contact page.
-- **Week 8** adds a complete, modular Node.js + Express + MongoDB backend with JWT authentication, role-based authorization, REST APIs, advanced search/filter/pagination/sort, and API security hardening.
-
----
-
-## Week 8 Objectives
-
-- [x] Modular Express.js backend with clean architecture
-- [x] MongoDB + Mongoose data models with indexes
-- [x] JWT authentication with secure password hashing
-- [x] Role-based access control (candidate, recruiter, admin)
-- [x] Full CRUD REST APIs for jobs, users, and applications
-- [x] Advanced database-backed search, filtering, pagination, and sorting
-- [x] 6 security practices: JWT, bcrypt, validation, protected routes, RBAC, env vars
-- [x] Advanced security: Helmet, CORS, rate limiting, body limits
-- [x] Centralized error handling
-- [x] Standard API response format
-- [x] Postman collection with test assertions
-- [x] API documentation
-- [x] Frontend integration with graceful fallback
-
----
-
-## Technology Stack
-
-### Frontend
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| React | 19 | UI framework |
-| Vite | 8 | Build tool & dev server |
-| React Router DOM | 7 | Client-side routing |
-| Framer Motion | 14 | Animations |
-| Lucide React | Latest | Icons |
-
-### Backend
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Node.js | 18+ | Runtime |
-| Express.js | 5 | HTTP framework |
-| MongoDB | Atlas/Local | Database |
-| Mongoose | 8 | ODM |
-| bcryptjs | 2 | Password hashing |
-| jsonwebtoken | 9 | JWT auth |
-| express-validator | 7 | Input validation |
-| helmet | 8 | Security headers |
-| cors | 2 | CORS control |
-| express-rate-limit | 7 | Rate limiting |
-| dotenv | 16 | Environment config |
-
----
+| Area | Technology |
+|---|---|
+| Frontend | React 19, Vite 8, JavaScript, HTML5, CSS3 |
+| Routing/forms | React Router 7, React Hook Form, Zod |
+| State/API | Context API, Axios |
+| Charts | Recharts |
+| Backend | Node.js, Express 5 |
+| Database/auth | MongoDB, Mongoose, JWT, bcrypt |
+| Validation/security | express-validator, Helmet, CORS allowlist, rate limiting |
+| Tooling | Git, npm, Postman, Oxlint |
 
 ## Architecture
 
-```
-E:\w7\
-├── src/                        # React frontend (preserved from Week 7)
-│   ├── assets/
-│   ├── components/
-│   │   ├── ApplicationModal.jsx  # Updated: API-connected
-│   │   ├── Navbar.jsx
-│   │   ├── Footer.jsx
-│   │   └── ...
-│   ├── pages/
-│   │   ├── Jobs.jsx              # Updated: API-connected with pagination
-│   │   ├── Home.jsx
-│   │   └── Contact.jsx
-│   ├── services/
-│   │   └── api.js                # NEW: Frontend API client
-│   └── data/
-│       └── jobs.js               # Preserved: fallback static data
-│
-├── server/                     # NEW: Backend
+This repository preserves the Week 9 single-root scripts and import paths to avoid a risky directory migration. It implements the requested frontend/backend separation logically (`src/` and `server/`); it does not physically rename them to `frontend/` and `backend/`.
+
+```text
+.
+├── src/
+│   ├── components/       # Navbar, Sidebar, JobCard, JobFilter, Loader, ProtectedRoute, shared UI
+│   ├── context/          # AuthContext, AppContext, ThemeContext, ToastContext
+│   ├── hooks/            # useAuth, useDebounce
+│   ├── pages/            # Jobs, Login, Register, JobDetails, role dashboards, Profile, etc.
+│   ├── services/api.js   # Axios instance, interceptors, endpoint clients
+│   └── utils/validation.js
+├── server/
 │   ├── config/
-│   │   └── database.js           # MongoDB connection
 │   ├── controllers/
-│   │   ├── authController.js     # Register, login, me, logout
-│   │   ├── jobController.js      # CRUD + search/filter/pagination
-│   │   ├── applicationController.js
-│   │   └── userController.js
-│   ├── models/
-│   │   ├── User.js               # Roles, bcrypt hook, indexes
-│   │   ├── Job.js                # Text + field indexes
-│   │   └── Application.js        # Duplicate guard, referenceId
-│   ├── routes/
-│   │   ├── authRoutes.js
-│   │   ├── jobRoutes.js
-│   │   ├── applicationRoutes.js
-│   │   └── userRoutes.js
 │   ├── middleware/
-│   │   ├── authMiddleware.js      # authenticateUser, authorizeRole
-│   │   ├── errorMiddleware.js     # Centralized handler + 404
-│   │   └── validationMiddleware.js
-│   ├── validators/
-│   │   ├── authValidators.js
-│   │   ├── jobValidators.js
-│   │   └── applicationValidators.js
-│   ├── utils/
-│   │   └── helpers.js
-│   ├── scripts/
-│   │   └── seedDB.js             # Database seeder
-│   └── server.js                 # Entry point
-│
-├── postman/
-│   └── DG-Interns-Hub-API.json  # Importable Postman collection
-├── docs/
-│   └── screenshots/              # Project screenshots
+│   ├── models/
+│   ├── routes/
+│   ├── scripts/          # seedDB.js
+│   └── server.js
+├── docs/                 # API, test results, report source/checklists
+├── postman/              # Importable API collection
+├── screenshots/          # Capture checklist; add actual captures here
 ├── API-DOCUMENTATION.md
-├── LINKEDIN-POST.md
-├── .env.example                  # Safe placeholder env template
-├── .env.frontend.example         # Frontend env template
-└── package.json                  # Combined frontend + backend scripts
+└── package.json
 ```
 
----
+## Requirements and setup
 
-## Prerequisites
+- Node.js 20.19+ (or 22.12+) and npm.
+- MongoDB local instance or Atlas database.
 
-- Node.js 18+
-- A MongoDB database (MongoDB Atlas free tier recommended)
-- npm
+In PowerShell from the repository root:
 
----
-
-## Installation
-
-```bash
-# Clone the repository (or navigate to the project folder)
-cd E:\w7
-
-# Install all dependencies
+```powershell
 npm install
+Copy-Item .env.example .env
+Copy-Item .env.frontend.example .env.local
 ```
 
----
+Set the values in `.env` and `.env.local`:
 
-## Environment Setup
+| Variable | Used by | Description |
+|---|---|---|
+| `PORT` | Backend | API port; defaults to `5000` |
+| `NODE_ENV` | Backend | `development` or `production` |
+| `MONGODB_URI` | Backend | Required MongoDB connection string |
+| `JWT_SECRET` | Backend | Required signing secret; use a unique random value of at least 32 characters |
+| `JWT_EXPIRES_IN` | Backend | JWT lifetime, default `7d` |
+| `FRONTEND_URL` | Backend | Comma-separated allowed browser origins |
+| `VITE_API_URL` | Frontend | API base URL, default `http://localhost:5000/api` |
 
-### Backend
-```bash
-# Copy the example and fill in values
-cp .env.example .env
+Never commit `.env` or expose `JWT_SECRET`.
+
+```powershell
+npm run seed          # Seed demo users, jobs, and sample applications
+npm run server        # API at http://localhost:5000
+npm run dev           # Vite UI at http://localhost:5173 (another terminal)
+npm run build         # Production frontend build
+npm run lint          # Oxlint
 ```
 
-Edit `.env`:
-```
-PORT=5000
-NODE_ENV=development
-MONGODB_URI=mongodb+srv://<user>:<pass>@cluster0.example.mongodb.net/dg-interns-hub?retryWrites=true&w=majority
-JWT_SECRET=your_long_random_secret_here_minimum_32_chars
-JWT_EXPIRES_IN=7d
-FRONTEND_URL=http://localhost:5173
-```
+The seed operation is idempotent for existing demo records. `npm run seed:clear` permanently deletes users, jobs, and applications in the configured database; use it only on a disposable development database.
 
-### Frontend
-```bash
-cp .env.frontend.example .env.local
-```
+### Demo accounts
 
-Edit `.env.local`:
-```
-VITE_API_URL=http://localhost:5000/api
-```
-
----
-
-## Database Setup
-
-```bash
-# Seed the database with 6 sample jobs and 3 test users
-npm run seed
-
-# Clear all collections (use with caution)
-npm run seed:clear
-```
-
-**Seed credentials:**
 | Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@dginternshub.com | Admin@1234 |
-| Recruiter | recruiter@dginternshub.com | Recruiter@1234 |
-| Candidate | candidate@dginternshub.com | Candidate@1234 |
+|---|---|---|
+| Admin | `admin@dginternshub.com` | `Admin@1234` |
+| Recruiter | `recruiter@dginternshub.com` | `Recruiter@1234` |
+| Candidate | `candidate@dginternshub.com` | `Candidate@1234` |
 
----
+These are development-only seed credentials. Replace them and the seed passwords before any production deployment.
 
-## Running the Application
+## API overview
 
-```bash
-# Start the backend (Terminal 1)
-npm run server
+All API responses are JSON except the authenticated resume download. Send `Authorization: Bearer <token>` to protected endpoints.
 
-# Start the frontend (Terminal 2)
-npm run dev
+| Method | Endpoint | Access | Purpose |
+|---|---|---|---|
+| `GET` | `/api/health` | Public | Health check |
+| `POST` | `/api/auth/register` | Public | Register a candidate (name, email, password, phone) |
+| `POST` | `/api/auth/login` | Public | Login; returns JWT and user |
+| `GET` | `/api/auth/me` | Authenticated | Restore current user |
+| `POST` | `/api/auth/logout` | Authenticated | Stateless logout acknowledgement; client discards token |
+| `GET` | `/api/jobs` | Public | Search/filter/sort jobs; supports `page`, `limit`, `search`, `title`, `skill`, `location`, `type`, `category`, `experience`, `company`, `salaryMin`, `salaryMax`, `sort` |
+| `GET` | `/api/jobs/:id` | Public | Job details |
+| `GET` | `/api/jobs/mine` | Recruiter/admin | Own jobs (all jobs for admin) |
+| `POST` | `/api/jobs` | Recruiter/admin | Create a job |
+| `PUT` | `/api/jobs/:id` | Owner recruiter/admin | Update a job |
+| `DELETE` | `/api/jobs/:id` | Owner recruiter/admin | Soft-delete a job |
+| `POST` | `/api/applications` | Candidate | Apply using multipart field `resume` (PDF/DOC/DOCX, max 5 MB); existing JSON `resumeLink` clients remain supported |
+| `GET` | `/api/applications/my` | Candidate | Candidate application history |
+| `GET` | `/api/applications/received` | Recruiter/admin | Applications for recruiter-owned jobs / all for admin |
+| `GET` | `/api/applications/:id` | Owner candidate, job recruiter, admin | Application details |
+| `GET` | `/api/applications/:id/resume` | Authorized application participant | Securely download uploaded resume |
+| `PUT` | `/api/applications/:id/status` | Job recruiter/admin | Update status: `pending`, `reviewed`, `shortlisted`, `interview`, `rejected`, `hired` |
+| `DELETE` | `/api/applications/:id` | Owning candidate/admin | Withdraw/delete application |
+| `GET`, `PUT`, `DELETE` | `/api/users/profile` | Authenticated | Read/update/delete own profile |
+| `GET` | `/api/admin/stats` | Admin only | Counts, monthly applications, job categories |
+| `GET` | `/api/admin/users` | Admin only | Search/filter platform accounts |
+| `PUT` | `/api/admin/users/:id/disable` | Admin only | Disable or re-enable an account |
+| `GET` | `/api/notifications` | Authenticated | Recent notifications and unread count |
+| `PUT` | `/api/notifications/:id/read` | Authenticated | Mark one notification read |
+| `PUT` | `/api/notifications/read-all` | Authenticated | Mark all notifications read |
+
+See [API-DOCUMENTATION.md](./API-DOCUMENTATION.md) and the Postman collection at [postman/DG-Interns-Hub-API.json](./postman/DG-Interns-Hub-API.json) for request examples.
+
+### API contract notes
+
+- Job search retains the existing endpoint/response shape (`page`, `limit`, `total`, `totalPages`, `data`) and adds optional filters and sort values.
+- Existing JSON application clients using `resumeLink` continue to work. The UI now uploads a resume file, which is stored privately in `server/uploads/resumes/`; retrieval is authorized through the application resume endpoint.
+- Application status adds `interview`; existing `pending`, `reviewed`, `shortlisted`, `rejected`, and `hired` values remain valid.
+- Admin stats/user controls and notifications are additive routes. Self-registration still cannot set a privileged role.
+
+## Performance decisions
+
+- `React.memo(JobCard)` avoids rerendering stable job cards when the surrounding listing updates.
+- `useMemo` derives dashboard metrics and match scores from fetched data instead of recalculating on every render.
+- `useCallback` stabilizes dashboard loaders and retry handlers passed to children/effects.
+- `React.lazy`/`Suspense` split page bundles so a visitor does not download every dashboard up front.
+- `useDebounce` delays search requests by 400 ms; server-side pagination bounds each listing response.
+
+## Testing and screenshots
+
+Actual test outcomes and environment blockers are recorded in [docs/WEEK10_TEST_RESULTS.md](./docs/WEEK10_TEST_RESULTS.md). The screenshot capture matrix and exact filenames are in [docs/SCREENSHOT-CHECKLIST.md](./docs/SCREENSHOT-CHECKLIST.md). Put genuine captures in `screenshots/`; the repository does not fabricate screenshots.
+
+## Submission materials
+
+- Project report: `docs/Week10-Project-Report.docx`
+- Presentation: `docs/Week10-Project-Presentation.pptx`
+- Demo walkthrough: [docs/DEMO-VIDEO-SCRIPT.md](./docs/DEMO-VIDEO-SCRIPT.md)
+- LinkedIn post: [LINKEDIN-POST.md](./LINKEDIN-POST.md)
+
+The DOCX/PPTX should be updated with actual screenshots and test outcomes after running the seeded app locally.
+
+## Suggested Git history and push
+
+Suggested small commits:
+
+```text
+feat(auth): add role-based dashboards and persisted sessions
+feat(api): centralize Axios client and extend role-protected endpoints
+feat(jobs): add advanced filters sorting and pagination
+feat(applications): validate forms and securely upload resumes
+feat(dashboards): add analytics notifications and recommendations
+docs(submission): add Week 10 report tests and demo materials
 ```
 
-- **Backend:** http://localhost:5000
-- **Frontend:** http://localhost:5173
-- **API Health:** http://localhost:5000/api/health
+To publish the completed work:
 
----
-
-## API Endpoint Overview
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | /api/auth/register | None | Register (candidate) |
-| POST | /api/auth/login | None | Login → JWT |
-| GET | /api/auth/me | Required | Get current user |
-| POST | /api/auth/logout | Required | Logout |
-| GET | /api/users/profile | Required | Get own profile |
-| PUT | /api/users/profile | Required | Update own profile |
-| DELETE | /api/users/profile | Required | Delete own account |
-| GET | /api/jobs | None | List/search/filter/paginate jobs |
-| GET | /api/jobs/:id | None | Get single job |
-| POST | /api/jobs | Recruiter/Admin | Create job |
-| PUT | /api/jobs/:id | Recruiter/Admin | Update job |
-| DELETE | /api/jobs/:id | Recruiter/Admin | Delete job |
-| POST | /api/applications | Candidate | Apply for job |
-| GET | /api/applications/my | Required | View own applications |
-| GET | /api/applications/:id | Required | View single application |
-| PUT | /api/applications/:id/status | Recruiter/Admin | Update status |
-| DELETE | /api/applications/:id | Required | Delete application |
-
-See [API-DOCUMENTATION.md](./API-DOCUMENTATION.md) for full details.
-
----
-
-## Postman Collection
-
-1. Open Postman
-2. Import → `postman/DG-Interns-Hub-API.json`
-3. Set collection variable `base_url` = `http://localhost:5000/api`
-4. Run "Login — Valid" to auto-populate `auth_token`
-5. Run requests in sequence
-
----
-
-## Security Measures
-
-| # | Measure | Implementation |
-|---|---------|---------------|
-| 1 | JWT Authentication | jsonwebtoken, verified per-request |
-| 2 | Password Hashing | bcryptjs, salt factor 12 |
-| 3 | Input Validation | express-validator on all mutation routes |
-| 4 | Protected Routes | authenticateUser middleware |
-| 5 | Role-Based Authorization | authorizeRole() factory |
-| 6 | Environment Variables | dotenv, .env excluded from git |
-| 7 | Security Headers | Helmet (11+ headers) |
-| 8 | CORS | Strict origin allowlist |
-| 9 | Rate Limiting | Global 200/15min, auth 20/15min |
-| 10 | Body Size Limits | 10kb max |
-| 11 | Mass Assignment Prevention | Whitelist-based field updates |
-| 12 | Regex Injection Protection | User input escaped before regex |
-
----
-
-## Troubleshooting
-
-| Issue | Fix |
-|-------|-----|
-| `Missing required environment variables` | Copy `.env.example` to `.env` |
-| `MongoDB Connection Error` | Check your Atlas URI and network access |
-| `CORS error` | Ensure `FRONTEND_URL` matches your frontend origin |
-| `401 errors` | Token expired — log in again |
-| `403 errors` | Log in with correct role account |
-| Frontend shows static data | Backend not running or `VITE_API_URL` not set |
-
----
-
-## Deliverables
-
-| File | Location |
-|------|----------|
-| Backend source | `server/` |
-| API Documentation | `API-DOCUMENTATION.md` |
-| Postman Collection | `postman/DG-Interns-Hub-API.json` |
-| Week 8 Report | `docs/DG-Interns-Hub-Week-8-Report.pdf` *(create after running)* |
-| Presentation | `docs/DG-Interns-Hub-Week-8-Presentation.pptx` *(create after running)* |
-| Screenshots | `docs/screenshots/` |
-| LinkedIn Post draft | `LINKEDIN-POST.md` |
-
----
-
-## Incomplete / External Dependencies
-
-> The following require external configuration before they work:
-
-1. **MongoDB** — Provide a valid `MONGODB_URI` in `.env`. Without it the server will not start.
-2. **PDF Report & PPTX** — Must be created with screenshots after the server is running.
-3. **JWT token revocation** — Currently stateless. A Redis-based blacklist would be needed for hard logout.
-#   W e e k - 9 - W e b - D e v e l o p m e n t  
+```powershell
+git add .
+git commit -m "feat: complete Week 10 job portal upgrade"
+git push origin <your-branch>
+```
+#   W e e k - 1 0 - W e b - D e v e l o p m e n t  
  
